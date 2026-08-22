@@ -6,7 +6,7 @@ CREATE TABLE users (
     password TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    exists BOOL DEFAULT TRUE
+    deleted_at TIMESTAMPTZ
 );
 
 -- +goose Down

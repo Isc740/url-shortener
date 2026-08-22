@@ -9,7 +9,7 @@ CREATE TABLE links (
     expiration_date TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    exists BOOL DEFAULT TRUE,
+    deleted_at TIMESTAMPTZ,
     CONSTRAINT fk_links_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -25,7 +25,7 @@ CREATE TABLE analytics (
     referrer TEXT,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    exists BOOL DEFAULT TRUE,
+    deleted_at TIMESTAMPTZ,
     CONSTRAINT fk_analysis_link FOREIGN KEY (link_id) REFERENCES links(id) ON DELETE CASCADE
 );
 
