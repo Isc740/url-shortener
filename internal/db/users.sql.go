@@ -229,13 +229,14 @@ func (q *Queries) RestoreUser(ctx context.Context, id int64) error {
 	return err
 }
 
-const updateUser = `-- name: UpdateUser :execrows
+const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET
     user_name = $2,
     email = $3,
     updated_at = $4
 WHERE id = $1
+RETURNING id
 `
 
 type UpdateUserParams struct {
@@ -246,14 +247,13 @@ type UpdateUserParams struct {
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, error) {
-	result, err := q.db.Exec(ctx, updateUser,
+	row := q.db.QueryRow(ctx, updateUser,
 		arg.ID,
 		arg.UserName,
 		arg.Email,
 		arg.UpdatedAt,
 	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }

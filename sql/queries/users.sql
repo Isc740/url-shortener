@@ -43,13 +43,14 @@ SELECT id, email, password
 FROM users
 WHERE email = $1 AND deleted_at IS NULL;
 
--- name: UpdateUser :execrows
+-- name: UpdateUser :one
 UPDATE users
 SET
     user_name = $2,
     email = $3,
     updated_at = $4
-WHERE id = $1;
+WHERE id = $1
+RETURNING id;
 
 -- name: DeleteUser :exec
 UPDATE users
@@ -57,12 +58,12 @@ SET
     deleted_at = $2
 WHERE id = $1;
 
--- name: DestroyUser :exec
-DELETE FROM users
-WHERE id = $1;
-
 -- name: RestoreUser :exec
 UPDATE users
 SET
     deleted_at = NULL
+WHERE id = $1;
+
+-- name: DestroyUser :exec
+DELETE FROM users
 WHERE id = $1;
