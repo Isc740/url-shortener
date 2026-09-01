@@ -32,6 +32,4 @@ func main() {
 	if err := a.Run(); err != nil {
 		log.Fatal("server failed: ", err)
 	}
-
-	// mux := http.NewServeMux()
 }

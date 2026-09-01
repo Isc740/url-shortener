@@ -6,34 +6,41 @@ import (
 
 	"github.com/Isc740/url-shortener/internal/config"
 	"github.com/Isc740/url-shortener/internal/db"
+	"github.com/Isc740/url-shortener/internal/handler"
+	"github.com/Isc740/url-shortener/internal/service"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type App struct {
 	Config  config.Config
-	DB      *pgxpool.Pool
 	Queries *db.Queries
 	Logger  *slog.Logger
 	Router  *http.ServeMux
 }
 
 func NewApp(cfg config.Config, pool *pgxpool.Pool, logger *slog.Logger) *App {
+	queries := db.New(pool)
+	userService := service.NewUserService(queries)
+	userHandler := handler.NewUserHandler(userService, logger)
+
 	a := &App{
 		Config:  cfg,
-		DB:      pool,
-		Queries: db.New(pool),
+		Queries: queries,
 		Logger:  logger,
 		Router:  http.NewServeMux(),
 	}
-	a.registerRoutes()
+	a.registerRoutes(userHandler)
 	return a
 }
 
-func (a *App) registerRoutes() {
+func (a *App) registerRoutes(userHandler *handler.UserHandler) {
 	a.Router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
+
+	a.Router.HandleFunc("POST /users", userHandler.Create)
+	a.Router.HandleFunc("GET /users", userHandler.GetAll)
 }
 
 func (a *App) Run() error {

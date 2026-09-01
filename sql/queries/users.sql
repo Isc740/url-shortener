@@ -14,6 +14,7 @@ SELECT
     updated_at,
     deleted_at
 FROM users
+WHERE deleted_at IS NULL
 LIMIT $1 OFFSET $2;
 
 -- name: GetUserByID :one
@@ -25,7 +26,7 @@ SELECT
     updated_at,
     deleted_at
 FROM users
-WHERE id = $1;
+WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: GetUserByName :one
 SELECT
@@ -36,7 +37,7 @@ SELECT
     updated_at,
     deleted_at
 FROM users
-WHERE user_name = $1;
+WHERE user_name = $1 AND deleted_at IS NULL;
 
 -- name: GetUserByEmailForAuth :one
 SELECT id, email, password
@@ -50,7 +51,7 @@ SET
     email = $3,
     updated_at = $4
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteUser :exec
 UPDATE users

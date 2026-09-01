@@ -17,7 +17,7 @@ type Querier interface {
 	GetUserByName(ctx context.Context, userName string) (GetUserByNameRow, error)
 	GetUsers(ctx context.Context, arg GetUsersParams) ([]GetUsersRow, error)
 	RestoreUser(ctx context.Context, id int64) error
-	UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

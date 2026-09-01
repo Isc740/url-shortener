@@ -103,7 +103,7 @@ SELECT
     updated_at,
     deleted_at
 FROM users
-WHERE id = $1
+WHERE id = $1 AND deleted_at IS NULL
 `
 
 type GetUserByIDRow struct {
@@ -138,7 +138,7 @@ SELECT
     updated_at,
     deleted_at
 FROM users
-WHERE user_name = $1
+WHERE user_name = $1 AND deleted_at IS NULL
 `
 
 type GetUserByNameRow struct {
@@ -173,6 +173,7 @@ SELECT
     updated_at,
     deleted_at
 FROM users
+WHERE deleted_at IS NULL
 LIMIT $1 OFFSET $2
 `
 
@@ -236,7 +237,7 @@ SET
     email = $3,
     updated_at = $4
 WHERE id = $1
-RETURNING id
+RETURNING id, user_name, email, password, created_at, updated_at, deleted_at
 `
 
 type UpdateUserParams struct {
@@ -246,14 +247,22 @@ type UpdateUserParams struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, error) {
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, updateUser,
 		arg.ID,
 		arg.UserName,
 		arg.Email,
 		arg.UpdatedAt,
 	)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.UserName,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
