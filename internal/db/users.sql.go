@@ -100,8 +100,7 @@ SELECT
     user_name,
     email,
     created_at,
-    updated_at,
-    deleted_at
+    updated_at
 FROM users
 WHERE id = $1 AND deleted_at IS NULL
 `
@@ -112,7 +111,6 @@ type GetUserByIDRow struct {
 	Email     string             `json:"email"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, id int64) (GetUserByIDRow, error) {
@@ -124,7 +122,6 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (GetUserByIDRow, er
 		&i.Email,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -135,8 +132,7 @@ SELECT
     user_name,
     email,
     created_at,
-    updated_at,
-    deleted_at
+    updated_at
 FROM users
 WHERE user_name = $1 AND deleted_at IS NULL
 `
@@ -147,7 +143,6 @@ type GetUserByNameRow struct {
 	Email     string             `json:"email"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
 }
 
 func (q *Queries) GetUserByName(ctx context.Context, userName string) (GetUserByNameRow, error) {
@@ -159,7 +154,6 @@ func (q *Queries) GetUserByName(ctx context.Context, userName string) (GetUserBy
 		&i.Email,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.DeletedAt,
 	)
 	return i, err
 }

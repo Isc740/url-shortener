@@ -14,6 +14,25 @@ func NewUserService(querier db.Querier) *UserService {
 	}
 }
 
+func (s *UserService) GetAll(ctx context.Context, limit int, offset int) ([]db.GetUsersRow, error) {
+	return s.queries.GetUsers(ctx, db.GetUsersParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+}
+
+func (s *UserService) GetById(ctx context.Context, id int) (db.GetUserByIDRow, error) {
+	return s.queries.GetUserByID(ctx, int64(id))
+}
+
+func (s *UserService) GetByUserName(ctx context.Context, name string) (db.GetUserByNameRow, error) {
+	return s.queries.GetUserByName(ctx, name)
+}
+
+func (s *UserService) GetByEmailForUserAuth(ctx context.Context, email string) (db.GetUserByEmailForAuthRow, error) {
+	return s.queries.GetUserByEmailForAuth(ctx, email)
+}
+
 func (s *UserService) Create(ctx context.Context, i CreateUserRequest) (UserResponse, error) {
 	now := time.Now()
 	user, err := s.queries.CreateUser(ctx, db.CreateUserParams{
@@ -36,26 +55,25 @@ func (s *UserService) Create(ctx context.Context, i CreateUserRequest) (UserResp
 	}, err
 }
 
-func (s *UserService) GetAll(ctx context.Context, limit int, offset int) ([]db.GetUsersRow, error) {
-	return s.queries.GetUsers(ctx, db.GetUsersParams{
-		Limit:  int32(limit),
-		Offset: int32(offset),
-	})
-}
-
-func (s *UserService) GetById(ctx context.Context, id int64) (db.GetUserByIDRow, error) {
-	return s.queries.GetUserByID(ctx, id)
-
-}
-
-func (s *UserService) Update(ctx context.Context, i UpdateUserRequest) (db.User, error) {
+func (s *UserService) Update(ctx context.Context, i UpdateUserRequest) (UserResponse, error) {
 	now := time.Now()
-	return s.queries.UpdateUser(ctx, db.UpdateUserParams{
+	user, err := s.queries.UpdateUser(ctx, db.UpdateUserParams{
 		ID:        int64(i.ID),
 		UserName:  i.UserName,
 		Email:     i.Email,
 		UpdatedAt: pgtype.Timestamptz{Time: now, Valid: true},
 	})
+	if err != nil {
+		return UserResponse{}, err
+	}
+
+	return UserResponse{
+		ID:        user.ID,
+		UserName:  user.UserName,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt.Time,
+		UpdatedAt: user.UpdatedAt.Time,
+	}, nil
 }
 
 func (s *UserService) Delete(ctx context.Context, id int) error {

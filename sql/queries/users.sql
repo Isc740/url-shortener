@@ -23,8 +23,7 @@ SELECT
     user_name,
     email,
     created_at,
-    updated_at,
-    deleted_at
+    updated_at
 FROM users
 WHERE id = $1 AND deleted_at IS NULL;
 
@@ -34,8 +33,7 @@ SELECT
     user_name,
     email,
     created_at,
-    updated_at,
-    deleted_at
+    updated_at
 FROM users
 WHERE user_name = $1 AND deleted_at IS NULL;
 

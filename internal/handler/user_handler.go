@@ -21,30 +21,6 @@ func NewUserHandler(service *service.UserService, logger *slog.Logger) *UserHand
 	}
 }
 
-func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var req service.CreateUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	user, err := h.Service.Create(r.Context(), req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(service.UserResponse{
-		UserName:  user.UserName,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt.Time,
-		UpdatedAt: user.UpdatedAt.Time,
-	})
-
-}
-
 func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil || limit <= 0 || limit > 100 {
@@ -64,4 +40,44 @@ func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	user, err := h.Service.GetById(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}
+
+func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var req service.CreateUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.Service.Create(r.Context(), req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(service.UserResponse{
+		UserName:  user.UserName,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	})
 }

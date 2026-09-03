@@ -39,8 +39,10 @@ func (a *App) registerRoutes(userHandler *handler.UserHandler) {
 		w.Write([]byte("ok"))
 	})
 
-	a.Router.HandleFunc("POST /users", userHandler.Create)
 	a.Router.HandleFunc("GET /users", userHandler.GetAll)
+	a.Router.HandleFunc("GET /users/{$}", userHandler.GetAll)
+	a.Router.HandleFunc("GET /users/{id}", userHandler.GetByID)
+	a.Router.HandleFunc("POST /users", userHandler.Create)
 }
 
 func (a *App) Run() error {
