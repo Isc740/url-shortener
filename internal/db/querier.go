@@ -9,14 +9,24 @@ import (
 )
 
 type Querier interface {
+	CreateLink(ctx context.Context, arg CreateLinkParams) (Link, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteLink(ctx context.Context, arg DeleteLinkParams) error
 	DeleteUser(ctx context.Context, arg DeleteUserParams) error
+	DestroyLink(ctx context.Context, id int64) error
 	DestroyUser(ctx context.Context, id int64) error
+	GetLinkByShortenedURL(ctx context.Context, shortenedUrl string) (GetLinkByShortenedURLRow, error)
+	GetLinkByTargetURL(ctx context.Context, targetUrl string) (GetLinkByTargetURLRow, error)
+	GetLinks(ctx context.Context) ([]GetLinksRow, error)
+	GetLinksByStatus(ctx context.Context, status string) ([]GetLinksByStatusRow, error)
 	GetUserByEmailForAuth(ctx context.Context, email string) (GetUserByEmailForAuthRow, error)
 	GetUserByID(ctx context.Context, id int64) (GetUserByIDRow, error)
 	GetUserByName(ctx context.Context, userName string) (GetUserByNameRow, error)
 	GetUsers(ctx context.Context, arg GetUsersParams) ([]GetUsersRow, error)
+	NextLinkID(ctx context.Context) (int64, error)
+	RestoreLink(ctx context.Context, id int64) error
 	RestoreUser(ctx context.Context, id int64) error
+	UpdateLink(ctx context.Context, arg UpdateLinkParams) (Link, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 

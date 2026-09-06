@@ -2,8 +2,6 @@ package service
 
 import (
 	"time"
-
-	"github.com/Isc740/url-shortener/internal/db"
 )
 
 type UserResponse struct {
@@ -24,8 +22,4 @@ type UpdateUserRequest struct {
 	ID       int    `json:"id"`
 	UserName string `json:"user_name"`
 	Email    string `json:"email"`
-}
-
-type UserService struct {
-	queries db.Querier
 }

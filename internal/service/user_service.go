@@ -8,6 +8,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type UserService struct {
+	queries db.Querier
+}
+
 func NewUserService(querier db.Querier) *UserService {
 	return &UserService{
 		queries: querier,

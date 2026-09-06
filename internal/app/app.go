@@ -20,8 +20,12 @@ type App struct {
 
 func NewApp(cfg config.Config, pool *pgxpool.Pool, logger *slog.Logger) *App {
 	queries := db.New(pool)
+
 	userService := service.NewUserService(queries)
 	userHandler := handler.NewUserHandler(userService, logger)
+
+	linkService := service.NewLinkService(queries)
+	linkHandler := handler.NewLinkHandler(linkService)
 
 	a := &App{
 		Config:  cfg,
@@ -29,11 +33,11 @@ func NewApp(cfg config.Config, pool *pgxpool.Pool, logger *slog.Logger) *App {
 		Logger:  logger,
 		Router:  http.NewServeMux(),
 	}
-	a.registerRoutes(userHandler)
+	a.registerRoutes(userHandler, linkHandler)
 	return a
 }
 
-func (a *App) registerRoutes(userHandler *handler.UserHandler) {
+func (a *App) registerRoutes(userHandler *handler.UserHandler, linkHandler *handler.LinkHandler) {
 	a.Router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
@@ -43,6 +47,8 @@ func (a *App) registerRoutes(userHandler *handler.UserHandler) {
 	a.Router.HandleFunc("GET /users/{$}", userHandler.GetAll)
 	a.Router.HandleFunc("GET /users/{id}", userHandler.GetByID)
 	a.Router.HandleFunc("POST /users", userHandler.Create)
+
+	a.Router.HandleFunc("POST /links", linkHandler.Create)
 }
 
 func (a *App) Run() error {
