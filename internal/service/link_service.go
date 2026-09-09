@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/Isc740/url-shortener/internal/base62"
@@ -55,7 +54,6 @@ func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO
 	}
 
 	shortenedURL := base62.Encode(uint64(link.ID))
-	fmt.Printf("ShortenedURL: %s", shortenedURL)
 	updatedLink, err := s.queries.UpdateLinkShortenedURL(ctx, db.UpdateLinkShortenedURLParams{
 		ID:           link.ID,
 		ShortenedUrl: pgtype.Text{String: shortenedURL, Valid: true},
