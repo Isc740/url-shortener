@@ -1,11 +1,20 @@
 package service
 
-import "time"
+import (
+	"time"
+)
 
 type CreateLinkDTO struct {
 	UserID         int8      `json:"user_id"`
 	TargetURL      string    `json:"target_url"`
 	Password       string    `json:"password"`
+	Status         string    `json:"status"`
+	ExpirationDate time.Time `json:"expiration_date"`
+}
+
+type UpdateLinkDTO struct {
+	UserID         int8      `json:"user_id"`
+	TargetURL      string    `json:"target_url"`
 	Status         string    `json:"status"`
 	ExpirationDate time.Time `json:"expiration_date"`
 }

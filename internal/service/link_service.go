@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Isc740/url-shortener/internal/base62"
@@ -31,17 +32,19 @@ func (s *LinkService) GetByTargetURL(ctx context.Context, targetUrl string) (db.
 	return s.queries.GetLinkByTargetURL(ctx, targetUrl)
 }
 
-func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO, error) {
-	id, err := s.queries.NextLinkID(ctx)
-	if err != nil {
-		return LinkDTO{}, err
-	}
+func (s *LinkService) GetByShortenedURL(ctx context.Context, shortenedURL string) (db.GetLinkByShortenedURLRow, error) {
+	return s.queries.GetLinkByShortenedURL(ctx, pgtype.Text{String: shortenedURL})
+}
 
+func (s *LinkService) GetByStatus(ctx context.Context, status string) ([]db.GetLinksByStatusRow, error) {
+	return s.queries.GetLinksByStatus(ctx, status)
+}
+
+func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO, error) {
 	link, err := s.queries.CreateLink(ctx, db.CreateLinkParams{
 		UserID:         pgtype.Int8{Int64: int64(params.UserID)},
 		TargetUrl:      params.TargetURL,
-		ShortenedUrl:   base62.Encode(uint64(id)),
-		Password:       pgtype.Text{String: params.Password},
+		Password:       pgtype.Text{String: params.Password, Valid: true},
 		Status:         "active",
 		ExpirationDate: pgtype.Timestamptz{Time: params.ExpirationDate},
 		CreatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
@@ -51,13 +54,23 @@ func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO
 		return LinkDTO{}, err
 	}
 
+	shortenedURL := base62.Encode(uint64(link.ID))
+	fmt.Printf("ShortenedURL: %s", shortenedURL)
+	updatedLink, err := s.queries.UpdateLinkShortenedURL(ctx, db.UpdateLinkShortenedURLParams{
+		ID:           link.ID,
+		ShortenedUrl: pgtype.Text{String: shortenedURL, Valid: true},
+	})
+	if err != nil {
+		return LinkDTO{}, err
+	}
+
 	return LinkDTO{
-		ID:             link.ID,
-		TargetUrl:      link.TargetUrl,
-		ShortenedUrl:   link.ShortenedUrl,
-		Status:         link.Status,
-		ExpirationDate: link.ExpirationDate.Time,
-		CreatedAt:      link.CreatedAt.Time,
-		UpdatedAt:      link.UpdatedAt.Time,
+		ID:             updatedLink.ID,
+		TargetUrl:      updatedLink.TargetUrl,
+		ShortenedUrl:   updatedLink.ShortenedUrl.String,
+		Status:         updatedLink.Status,
+		ExpirationDate: updatedLink.ExpirationDate.Time,
+		CreatedAt:      updatedLink.CreatedAt.Time,
+		UpdatedAt:      updatedLink.UpdatedAt.Time,
 	}, nil
 }

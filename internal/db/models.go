@@ -27,7 +27,7 @@ type Link struct {
 	ID             int64              `json:"id"`
 	UserID         pgtype.Int8        `json:"user_id"`
 	TargetUrl      string             `json:"target_url"`
-	ShortenedUrl   string             `json:"shortened_url"`
+	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Password       pgtype.Text        `json:"password"`
 	Status         string             `json:"status"`
 	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`

@@ -3,7 +3,7 @@ CREATE TABLE links (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT,
     target_url TEXT NOT NULL,
-    shortened_url TEXT NOT NULL UNIQUE,
+    shortened_url TEXT UNIQUE,
     password TEXT,
     status TEXT NOT NULL CHECK (status IN ('active', 'expired' , 'disabled', 'banned')),
     expiration_date TIMESTAMPTZ,

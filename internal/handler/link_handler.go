@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/Isc740/url-shortener/internal/service"
@@ -9,6 +10,7 @@ import (
 
 type LinkHandler struct {
 	Service *service.LinkService
+	Logger  *slog.Logger
 }
 
 func (h *LinkHandler) RegisterRoutes(mux *http.ServeMux) {
@@ -16,9 +18,10 @@ func (h *LinkHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /links", h.Create)
 }
 
-func NewLinkHandler(service *service.LinkService) *LinkHandler {
+func NewLinkHandler(service *service.LinkService, logger *slog.Logger) *LinkHandler {
 	return &LinkHandler{
 		Service: service,
+		Logger:  logger,
 	}
 }
 
@@ -34,6 +37,8 @@ func (h *LinkHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	h.Logger.Info("HTTP REQUEST", "POST", link)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

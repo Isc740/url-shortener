@@ -21,7 +21,7 @@ RETURNING id, user_id, target_url, shortened_url, password, status, expiration_d
 type CreateLinkParams struct {
 	UserID         pgtype.Int8        `json:"user_id"`
 	TargetUrl      string             `json:"target_url"`
-	ShortenedUrl   string             `json:"shortened_url"`
+	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Password       pgtype.Text        `json:"password"`
 	Status         string             `json:"status"`
 	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`
@@ -101,7 +101,7 @@ type GetLinkByIDRow struct {
 	ID             int64              `json:"id"`
 	UserID         pgtype.Int8        `json:"user_id"`
 	TargetUrl      string             `json:"target_url"`
-	ShortenedUrl   string             `json:"shortened_url"`
+	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
 	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
@@ -142,14 +142,14 @@ type GetLinkByShortenedURLRow struct {
 	ID             int64              `json:"id"`
 	UserID         pgtype.Int8        `json:"user_id"`
 	TargetUrl      string             `json:"target_url"`
-	ShortenedUrl   string             `json:"shortened_url"`
+	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
 	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
-func (q *Queries) GetLinkByShortenedURL(ctx context.Context, shortenedUrl string) (GetLinkByShortenedURLRow, error) {
+func (q *Queries) GetLinkByShortenedURL(ctx context.Context, shortenedUrl pgtype.Text) (GetLinkByShortenedURLRow, error) {
 	row := q.db.QueryRow(ctx, getLinkByShortenedURL, shortenedUrl)
 	var i GetLinkByShortenedURLRow
 	err := row.Scan(
@@ -183,7 +183,7 @@ type GetLinkByTargetURLRow struct {
 	ID             int64              `json:"id"`
 	UserID         pgtype.Int8        `json:"user_id"`
 	TargetUrl      string             `json:"target_url"`
-	ShortenedUrl   string             `json:"shortened_url"`
+	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
 	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
@@ -224,7 +224,7 @@ type GetLinksRow struct {
 	ID             int64              `json:"id"`
 	UserID         pgtype.Int8        `json:"user_id"`
 	TargetUrl      string             `json:"target_url"`
-	ShortenedUrl   string             `json:"shortened_url"`
+	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
 	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
@@ -278,7 +278,7 @@ type GetLinksByStatusRow struct {
 	ID             int64              `json:"id"`
 	UserID         pgtype.Int8        `json:"user_id"`
 	TargetUrl      string             `json:"target_url"`
-	ShortenedUrl   string             `json:"shortened_url"`
+	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
 	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
@@ -312,17 +312,6 @@ func (q *Queries) GetLinksByStatus(ctx context.Context, status string) ([]GetLin
 		return nil, err
 	}
 	return items, nil
-}
-
-const nextLinkID = `-- name: NextLinkID :one
-SELECT nextval('links_id_seq')
-`
-
-func (q *Queries) NextLinkID(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, nextLinkID)
-	var nextval int64
-	err := row.Scan(&nextval)
-	return nextval, err
 }
 
 const restoreLink = `-- name: RestoreLink :exec
@@ -364,6 +353,37 @@ func (q *Queries) UpdateLink(ctx context.Context, arg UpdateLinkParams) (Link, e
 		arg.ExpirationDate,
 		arg.UpdatedAt,
 	)
+	var i Link
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TargetUrl,
+		&i.ShortenedUrl,
+		&i.Password,
+		&i.Status,
+		&i.ExpirationDate,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateLinkShortenedURL = `-- name: UpdateLinkShortenedURL :one
+UPDATE links
+SET
+    shortened_url = $2
+WHERE id = $1
+RETURNING id, user_id, target_url, shortened_url, password, status, expiration_date, created_at, updated_at, deleted_at
+`
+
+type UpdateLinkShortenedURLParams struct {
+	ID           int64       `json:"id"`
+	ShortenedUrl pgtype.Text `json:"shortened_url"`
+}
+
+func (q *Queries) UpdateLinkShortenedURL(ctx context.Context, arg UpdateLinkShortenedURLParams) (Link, error) {
+	row := q.db.QueryRow(ctx, updateLinkShortenedURL, arg.ID, arg.ShortenedUrl)
 	var i Link
 	err := row.Scan(
 		&i.ID,

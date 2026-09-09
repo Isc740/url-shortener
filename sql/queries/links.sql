@@ -95,5 +95,9 @@ WHERE id = $1;
 DELETE FROM links
 WHERE id = $1;
 
--- name: NextLinkID :one
-SELECT nextval('links_id_seq');
+-- name: UpdateLinkShortenedURL :one
+UPDATE links
+SET
+    shortened_url = $2
+WHERE id = $1
+RETURNING *;

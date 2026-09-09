@@ -6,6 +6,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -16,7 +18,7 @@ type Querier interface {
 	DestroyLink(ctx context.Context, id int64) error
 	DestroyUser(ctx context.Context, id int64) error
 	GetLinkByID(ctx context.Context, id int64) (GetLinkByIDRow, error)
-	GetLinkByShortenedURL(ctx context.Context, shortenedUrl string) (GetLinkByShortenedURLRow, error)
+	GetLinkByShortenedURL(ctx context.Context, shortenedUrl pgtype.Text) (GetLinkByShortenedURLRow, error)
 	GetLinkByTargetURL(ctx context.Context, targetUrl string) (GetLinkByTargetURLRow, error)
 	GetLinks(ctx context.Context) ([]GetLinksRow, error)
 	GetLinksByStatus(ctx context.Context, status string) ([]GetLinksByStatusRow, error)
@@ -24,10 +26,10 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id int64) (GetUserByIDRow, error)
 	GetUserByName(ctx context.Context, userName string) (GetUserByNameRow, error)
 	GetUsers(ctx context.Context, arg GetUsersParams) ([]GetUsersRow, error)
-	NextLinkID(ctx context.Context) (int64, error)
 	RestoreLink(ctx context.Context, id int64) error
 	RestoreUser(ctx context.Context, id int64) error
 	UpdateLink(ctx context.Context, arg UpdateLinkParams) (Link, error)
+	UpdateLinkShortenedURL(ctx context.Context, arg UpdateLinkShortenedURLParams) (Link, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 

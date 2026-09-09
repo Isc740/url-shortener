@@ -22,7 +22,7 @@ func NewApp(cfg config.Config, pool *pgxpool.Pool, logger *slog.Logger) *App {
 	queries := db.New(pool)
 
 	userHandler := handler.NewUserHandler(service.NewUserService(queries), logger)
-	linkHandler := handler.NewLinkHandler(service.NewLinkService(queries))
+	linkHandler := handler.NewLinkHandler(service.NewLinkService(queries), logger)
 
 	app := &App{
 		Config:  cfg,
