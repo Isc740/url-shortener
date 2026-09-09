@@ -83,6 +83,47 @@ func (q *Queries) DestroyLink(ctx context.Context, id int64) error {
 	return err
 }
 
+const getLinkByID = `-- name: GetLinkByID :one
+SELECT
+    id,
+    user_id,
+    target_url,
+    shortened_url,
+    status,
+    expiration_date,
+    created_at,
+    updated_at
+FROM links
+WHERE id = $1 AND delete_at IS NULL
+`
+
+type GetLinkByIDRow struct {
+	ID             int64              `json:"id"`
+	UserID         pgtype.Int8        `json:"user_id"`
+	TargetUrl      string             `json:"target_url"`
+	ShortenedUrl   string             `json:"shortened_url"`
+	Status         string             `json:"status"`
+	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetLinkByID(ctx context.Context, id int64) (GetLinkByIDRow, error) {
+	row := q.db.QueryRow(ctx, getLinkByID, id)
+	var i GetLinkByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TargetUrl,
+		&i.ShortenedUrl,
+		&i.Status,
+		&i.ExpirationDate,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getLinkByShortenedURL = `-- name: GetLinkByShortenedURL :one
 SELECT
     id,

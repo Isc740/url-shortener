@@ -14,6 +14,13 @@ type UserHandler struct {
 	Logger  *slog.Logger
 }
 
+func (h *UserHandler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /users", h.GetAll)
+	mux.HandleFunc("GET /users/{$}", h.GetAll)
+	mux.HandleFunc("GET /users/{id}", h.GetByID)
+	mux.HandleFunc("POST /users", h.Create)
+}
+
 func NewUserHandler(service *service.UserService, logger *slog.Logger) *UserHandler {
 	return &UserHandler{
 		Service: service,

@@ -11,6 +11,11 @@ type LinkHandler struct {
 	Service *service.LinkService
 }
 
+func (h *LinkHandler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /links", h.Create)
+	mux.HandleFunc("POST /links", h.Create)
+}
+
 func NewLinkHandler(service *service.LinkService) *LinkHandler {
 	return &LinkHandler{
 		Service: service,

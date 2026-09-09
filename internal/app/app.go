@@ -21,34 +21,27 @@ type App struct {
 func NewApp(cfg config.Config, pool *pgxpool.Pool, logger *slog.Logger) *App {
 	queries := db.New(pool)
 
-	userService := service.NewUserService(queries)
-	userHandler := handler.NewUserHandler(userService, logger)
+	userHandler := handler.NewUserHandler(service.NewUserService(queries), logger)
+	linkHandler := handler.NewLinkHandler(service.NewLinkService(queries))
 
-	linkService := service.NewLinkService(queries)
-	linkHandler := handler.NewLinkHandler(linkService)
-
-	a := &App{
+	app := &App{
 		Config:  cfg,
 		Queries: queries,
 		Logger:  logger,
 		Router:  http.NewServeMux(),
 	}
-	a.registerRoutes(userHandler, linkHandler)
-	return a
+
+	userHandler.RegisterRoutes(app.Router)
+	linkHandler.RegisterRoutes(app.Router)
+
+	app.Router.HandleFunc("GET /", healthCheck)
+
+	return app
 }
 
-func (a *App) registerRoutes(userHandler *handler.UserHandler, linkHandler *handler.LinkHandler) {
-	a.Router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	})
-
-	a.Router.HandleFunc("GET /users", userHandler.GetAll)
-	a.Router.HandleFunc("GET /users/{$}", userHandler.GetAll)
-	a.Router.HandleFunc("GET /users/{id}", userHandler.GetByID)
-	a.Router.HandleFunc("POST /users", userHandler.Create)
-
-	a.Router.HandleFunc("POST /links", linkHandler.Create)
+func healthCheck(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("ok"))
 }
 
 func (a *App) Run() error {

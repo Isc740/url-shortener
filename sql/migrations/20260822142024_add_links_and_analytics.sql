@@ -6,7 +6,7 @@ CREATE TABLE links (
     shortened_url TEXT NOT NULL UNIQUE,
     password TEXT,
     status TEXT NOT NULL CHECK (status IN ('active', 'expired' , 'disabled', 'banned')),
-    expiration_date TIMESTAMPTZ NOT NULL,
+    expiration_date TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
     deleted_at TIMESTAMPTZ,

@@ -19,6 +19,18 @@ func NewLinkService(querier db.Querier) *LinkService {
 	}
 }
 
+func (s *LinkService) GetAll(ctx context.Context) ([]db.GetLinksRow, error) {
+	return s.queries.GetLinks(ctx)
+}
+
+func (s *LinkService) GetByID(ctx context.Context, id int) (db.GetLinkByIDRow, error) {
+	return s.queries.GetLinkByID(ctx, int64(id))
+}
+
+func (s *LinkService) GetByTargetURL(ctx context.Context, targetUrl string) (db.GetLinkByTargetURLRow, error) {
+	return s.queries.GetLinkByTargetURL(ctx, targetUrl)
+}
+
 func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO, error) {
 	id, err := s.queries.NextLinkID(ctx)
 	if err != nil {
@@ -26,12 +38,12 @@ func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO
 	}
 
 	link, err := s.queries.CreateLink(ctx, db.CreateLinkParams{
-		UserID:         pgtype.Int8{Int64: int64(params.UserID), Valid: true},
+		UserID:         pgtype.Int8{Int64: int64(params.UserID)},
 		TargetUrl:      params.TargetURL,
 		ShortenedUrl:   base62.Encode(uint64(id)),
-		Password:       pgtype.Text{String: params.Password, Valid: true},
+		Password:       pgtype.Text{String: params.Password},
 		Status:         "active",
-		ExpirationDate: pgtype.Timestamptz{Time: params.ExpirationDate, Valid: true},
+		ExpirationDate: pgtype.Timestamptz{Time: params.ExpirationDate},
 		CreatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
 		UpdatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	})

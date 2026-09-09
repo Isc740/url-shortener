@@ -17,6 +17,19 @@ SELECT
 FROM links
 WHERE deleted_at IS NULL;
 
+-- name: GetLinkByID :one
+SELECT
+    id,
+    user_id,
+    target_url,
+    shortened_url,
+    status,
+    expiration_date,
+    created_at,
+    updated_at
+FROM links
+WHERE id = $1 AND delete_at IS NULL;
+
 -- name: GetLinkByTargetURL :one
 SELECT
     id,

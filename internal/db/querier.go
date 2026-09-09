@@ -15,6 +15,7 @@ type Querier interface {
 	DeleteUser(ctx context.Context, arg DeleteUserParams) error
 	DestroyLink(ctx context.Context, id int64) error
 	DestroyUser(ctx context.Context, id int64) error
+	GetLinkByID(ctx context.Context, id int64) (GetLinkByIDRow, error)
 	GetLinkByShortenedURL(ctx context.Context, shortenedUrl string) (GetLinkByShortenedURLRow, error)
 	GetLinkByTargetURL(ctx context.Context, targetUrl string) (GetLinkByTargetURLRow, error)
 	GetLinks(ctx context.Context) ([]GetLinksRow, error)
