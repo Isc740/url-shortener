@@ -80,7 +80,6 @@ func (s *LinkService) GetTargetURLByShortenedURL(ctx context.Context, shortenedU
 	if err != nil {
 		return "", wrapNotFound(err, ErrLinkNotFound, "error getting link")
 	}
-
 	if link.Status != "active" {
 		return "", ErrLinkInactive
 	}
@@ -115,16 +114,17 @@ func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO
 		return LinkDTO{}, fmt.Errorf("error shortening url: %w", err)
 	}
 
-	return LinkDTO{
-		ID:             updatedLink.ID,
-		UserName:       updatedLink.UserName,
-		TargetUrl:      updatedLink.TargetUrl,
-		ShortenedUrl:   updatedLink.ShortenedUrl.String,
-		Status:         updatedLink.Status,
-		ExpirationDate: updatedLink.ExpirationDate.Time,
-		CreatedAt:      updatedLink.CreatedAt.Time,
-		UpdatedAt:      updatedLink.UpdatedAt.Time,
-	}, nil
+	return toLinkDTO(
+		updatedLink.ID,
+		updatedLink.UserName,
+		updatedLink.TargetUrl,
+		updatedLink.ShortenedUrl.String,
+		updatedLink.Status,
+		updatedLink.ExpirationDate.Time,
+		updatedLink.CreatedAt.Time,
+		updatedLink.UpdatedAt.Time,
+	), nil
+
 }
 
 func (s *LinkService) Update(ctx context.Context, params UpdateLinkDTO) (LinkDTO, error) {
@@ -139,14 +139,27 @@ func (s *LinkService) Update(ctx context.Context, params UpdateLinkDTO) (LinkDTO
 		return LinkDTO{}, fmt.Errorf("error updating link: %w", err)
 	}
 
+	return toLinkDTO(
+		link.ID,
+		link.UserName,
+		link.TargetUrl,
+		link.ShortenedUrl.String,
+		link.Status,
+		link.ExpirationDate.Time,
+		link.CreatedAt.Time,
+		link.UpdatedAt.Time,
+	), nil
+}
+
+func toLinkDTO(id int64, userName, targetURL, shortenedURL, status string, exp, created, updated time.Time) LinkDTO {
 	return LinkDTO{
-		ID:             link.ID,
-		UserName:       link.UserName,
-		TargetUrl:      link.TargetUrl,
-		ShortenedUrl:   link.ShortenedUrl.String,
-		Status:         link.Status,
-		ExpirationDate: link.ExpirationDate.Time,
-		CreatedAt:      link.CreatedAt.Time,
-		UpdatedAt:      link.UpdatedAt.Time,
-	}, nil
+		ID:             id,
+		UserName:       userName,
+		TargetUrl:      targetURL,
+		ShortenedUrl:   shortenedURL,
+		Status:         status,
+		ExpirationDate: exp,
+		CreatedAt:      created,
+		UpdatedAt:      updated,
+	}
 }
