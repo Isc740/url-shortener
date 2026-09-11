@@ -22,6 +22,7 @@ type Querier interface {
 	GetLinkByTargetURL(ctx context.Context, targetUrl string) (GetLinkByTargetURLRow, error)
 	GetLinks(ctx context.Context) ([]GetLinksRow, error)
 	GetLinksByStatus(ctx context.Context, status string) ([]GetLinksByStatusRow, error)
+	GetTargetURLByShortenedURL(ctx context.Context, shortenedUrl pgtype.Text) (string, error)
 	GetUserByEmailForAuth(ctx context.Context, email string) (GetUserByEmailForAuthRow, error)
 	GetUserByID(ctx context.Context, id int64) (GetUserByIDRow, error)
 	GetUserByName(ctx context.Context, userName string) (GetUserByNameRow, error)

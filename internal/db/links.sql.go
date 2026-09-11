@@ -319,6 +319,20 @@ func (q *Queries) GetLinksByStatus(ctx context.Context, status string) ([]GetLin
 	return items, nil
 }
 
+const getTargetURLByShortenedURL = `-- name: GetTargetURLByShortenedURL :one
+SELECT
+    target_url
+FROM links
+WHERE shortened_url = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetTargetURLByShortenedURL(ctx context.Context, shortenedUrl pgtype.Text) (string, error) {
+	row := q.db.QueryRow(ctx, getTargetURLByShortenedURL, shortenedUrl)
+	var target_url string
+	err := row.Scan(&target_url)
+	return target_url, err
+}
+
 const restoreLink = `-- name: RestoreLink :exec
 UPDATE links
 SET

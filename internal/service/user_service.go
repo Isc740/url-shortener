@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Isc740/url-shortener/internal/db"
@@ -47,7 +48,7 @@ func (s *UserService) Create(ctx context.Context, i CreateUserRequest) (UserResp
 		UpdatedAt: pgtype.Timestamptz{Time: now, Valid: true},
 	})
 	if err != nil {
-		return UserResponse{}, err
+		return UserResponse{}, fmt.Errorf("error creating user: %w", err)
 	}
 
 	return UserResponse{
@@ -68,7 +69,7 @@ func (s *UserService) Update(ctx context.Context, i UpdateUserRequest) (UserResp
 		UpdatedAt: pgtype.Timestamptz{Time: now, Valid: true},
 	})
 	if err != nil {
-		return UserResponse{}, err
+		return UserResponse{}, fmt.Errorf("error updating user: %w", err)
 	}
 
 	return UserResponse{

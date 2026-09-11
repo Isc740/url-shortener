@@ -60,6 +60,12 @@ FROM links l
 JOIN users u ON l.user_id = u.id
 WHERE shortened_url = $1 AND deleted_at IS NULL;
 
+-- name: GetTargetURLByShortenedURL :one
+SELECT
+    target_url
+FROM links
+WHERE shortened_url = $1 AND deleted_at IS NULL;
+
 -- name: GetLinksByStatus :many
 SELECT
     l.id,

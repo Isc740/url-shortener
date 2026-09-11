@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/Isc740/url-shortener/internal/base62"
 	"github.com/Isc740/url-shortener/internal/db"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -20,24 +23,71 @@ func NewLinkService(querier db.Querier) *LinkService {
 	}
 }
 
+var (
+	ErrLinkNotFound       = errors.New("link not found")
+	ErrLinksNotFound      = errors.New("links not found")
+	ErrLinkExpired        = errors.New("link has expired")
+	ErrLinkInactive       = errors.New("link is inactive")
+	ErrDuplicateTargetURL = errors.New("target url already shortened")
+	ErrUserNotFound       = errors.New("user does not exist")
+)
+
 func (s *LinkService) GetAll(ctx context.Context) ([]db.GetLinksRow, error) {
-	return s.queries.GetLinks(ctx)
-}
-
-func (s *LinkService) GetByID(ctx context.Context, id int) (db.GetLinkByIDRow, error) {
-	return s.queries.GetLinkByID(ctx, int64(id))
-}
-
-func (s *LinkService) GetByTargetURL(ctx context.Context, targetUrl string) (db.GetLinkByTargetURLRow, error) {
-	return s.queries.GetLinkByTargetURL(ctx, targetUrl)
-}
-
-func (s *LinkService) GetByShortenedURL(ctx context.Context, shortenedURL string) (db.GetLinkByShortenedURLRow, error) {
-	return s.queries.GetLinkByShortenedURL(ctx, pgtype.Text{String: shortenedURL})
+	links, err := s.queries.GetLinks(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error getting links: %w", err)
+	}
+	return links, err
 }
 
 func (s *LinkService) GetByStatus(ctx context.Context, status string) ([]db.GetLinksByStatusRow, error) {
-	return s.queries.GetLinksByStatus(ctx, status)
+	links, err := s.queries.GetLinksByStatus(ctx, status)
+	if err != nil {
+		return nil, fmt.Errorf("error getting target URL: %w", err)
+	}
+	return links, nil
+}
+
+func (s *LinkService) GetByID(ctx context.Context, id int) (db.GetLinkByIDRow, error) {
+	link, err := s.queries.GetLinkByID(ctx, int64(id))
+	if err != nil {
+		return db.GetLinkByIDRow{}, wrapNotFound(err, ErrLinkNotFound, "error getting link")
+	}
+	return link, nil
+}
+
+func (s *LinkService) GetByTargetURL(ctx context.Context, targetUrl string) (db.GetLinkByTargetURLRow, error) {
+	link, err := s.queries.GetLinkByTargetURL(ctx, targetUrl)
+	if err != nil {
+		return db.GetLinkByTargetURLRow{}, wrapNotFound(err, ErrLinkNotFound, "error getting link")
+	}
+
+	return link, nil
+}
+
+func (s *LinkService) GetByShortenedURL(ctx context.Context, shortenedURL string) (db.GetLinkByShortenedURLRow, error) {
+	link, err := s.queries.GetLinkByShortenedURL(ctx, pgtype.Text{String: shortenedURL})
+	if err != nil {
+		return db.GetLinkByShortenedURLRow{}, wrapNotFound(err, ErrLinkNotFound, "error getting link")
+	}
+
+	return link, nil
+}
+
+func (s *LinkService) GetTargetURLByShortenedURL(ctx context.Context, shortenedURL string) (string, error) {
+	link, err := s.queries.GetLinkByShortenedURL(ctx, pgtype.Text{String: shortenedURL, Valid: true})
+	if err != nil {
+		return "", wrapNotFound(err, ErrLinkNotFound, "error getting link")
+	}
+
+	if link.Status != "active" {
+		return "", ErrLinkInactive
+	}
+	if link.ExpirationDate.Valid && time.Now().After(link.ExpirationDate.Time) {
+		return "", ErrLinkExpired
+	}
+
+	return link.TargetUrl, nil
 }
 
 func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO, error) {
@@ -51,10 +101,19 @@ func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO
 		UpdatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	})
 	if err != nil {
-		return LinkDTO{}, fmt.Errorf("error creating user %w", err)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case "23505": // unique_violation
+				return LinkDTO{}, ErrDuplicateTargetURL
+			case "23503": // foreign_key_violation
+				return LinkDTO{}, ErrUserNotFound
+			}
+		}
+		return LinkDTO{}, fmt.Errorf("error creating link: %w", err)
 	}
 
-	shortenedURL := base62.Encode(uint64(link.ID))
+	shortenedURL := shortenURL(link.ID)
 	updatedLink, err := s.queries.UpdateLinkShortenedURL(ctx, db.UpdateLinkShortenedURLParams{
 		ID:           link.ID,
 		ShortenedUrl: pgtype.Text{String: shortenedURL, Valid: true},
@@ -97,4 +156,15 @@ func (s *LinkService) Update(ctx context.Context, params UpdateLinkDTO) (LinkDTO
 		CreatedAt:      link.CreatedAt.Time,
 		UpdatedAt:      link.UpdatedAt.Time,
 	}, nil
+}
+
+func shortenURL(id int64) string {
+	return base62.Encode(uint64(id))
+}
+
+func wrapNotFound(err error, notFound error, msg string) error {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return notFound
+	}
+	return fmt.Errorf("%s: %w", msg, err)
 }
