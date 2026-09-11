@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Isc740/url-shortener/internal/base62"
@@ -64,11 +65,36 @@ func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO
 
 	return LinkDTO{
 		ID:             updatedLink.ID,
+		UserName:       updatedLink.UserName,
 		TargetUrl:      updatedLink.TargetUrl,
 		ShortenedUrl:   updatedLink.ShortenedUrl.String,
 		Status:         updatedLink.Status,
 		ExpirationDate: updatedLink.ExpirationDate.Time,
 		CreatedAt:      updatedLink.CreatedAt.Time,
 		UpdatedAt:      updatedLink.UpdatedAt.Time,
+	}, nil
+}
+
+func (s *LinkService) Update(ctx context.Context, params UpdateLinkDTO) (LinkDTO, error) {
+	link, err := s.queries.UpdateLink(ctx, db.UpdateLinkParams{
+		ID:             int64(params.ID),
+		TargetUrl:      params.TargetURL,
+		Status:         params.Status,
+		ExpirationDate: pgtype.Timestamptz{Time: params.ExpirationDate, Valid: true},
+		UpdatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
+	})
+	if err != nil {
+		return LinkDTO{}, fmt.Errorf("error updating link: %w", err)
+	}
+
+	return LinkDTO{
+		ID:             link.ID,
+		UserName:       link.UserName,
+		TargetUrl:      link.TargetUrl,
+		ShortenedUrl:   link.ShortenedUrl.String,
+		Status:         link.Status,
+		ExpirationDate: link.ExpirationDate.Time,
+		CreatedAt:      link.CreatedAt.Time,
+		UpdatedAt:      link.UpdatedAt.Time,
 	}, nil
 }
