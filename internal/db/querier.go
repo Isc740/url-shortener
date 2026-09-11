@@ -28,8 +28,8 @@ type Querier interface {
 	GetUsers(ctx context.Context, arg GetUsersParams) ([]GetUsersRow, error)
 	RestoreLink(ctx context.Context, id int64) error
 	RestoreUser(ctx context.Context, id int64) error
-	UpdateLink(ctx context.Context, arg UpdateLinkParams) (Link, error)
-	UpdateLinkShortenedURL(ctx context.Context, arg UpdateLinkShortenedURLParams) (Link, error)
+	UpdateLink(ctx context.Context, arg UpdateLinkParams) (UpdateLinkRow, error)
+	UpdateLinkShortenedURL(ctx context.Context, arg UpdateLinkShortenedURLParams) (UpdateLinkShortenedURLRow, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 

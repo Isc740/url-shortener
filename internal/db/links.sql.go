@@ -60,7 +60,7 @@ const deleteLink = `-- name: DeleteLink :exec
 UPDATE links
 SET
     deleted_at = $2
-WHERE id = $1
+WHERE id = $1 AND deleted_at IS NULL
 `
 
 type DeleteLinkParams struct {
@@ -85,21 +85,22 @@ func (q *Queries) DestroyLink(ctx context.Context, id int64) error {
 
 const getLinkByID = `-- name: GetLinkByID :one
 SELECT
-    id,
-    user_id,
-    target_url,
-    shortened_url,
-    status,
-    expiration_date,
-    created_at,
-    updated_at
-FROM links
-WHERE id = $1 AND delete_at IS NULL
+    l.id,
+    u.user_name,
+    l.target_url,
+    l.shortened_url,
+    l.status,
+    l.expiration_date,
+    l.created_at,
+    l.updated_at
+FROM links l
+JOIN users u ON l.user_id = u.id
+WHERE l.id = $1 AND delete_at IS NULL
 `
 
 type GetLinkByIDRow struct {
 	ID             int64              `json:"id"`
-	UserID         pgtype.Int8        `json:"user_id"`
+	UserName       string             `json:"user_name"`
 	TargetUrl      string             `json:"target_url"`
 	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
@@ -113,7 +114,7 @@ func (q *Queries) GetLinkByID(ctx context.Context, id int64) (GetLinkByIDRow, er
 	var i GetLinkByIDRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.UserName,
 		&i.TargetUrl,
 		&i.ShortenedUrl,
 		&i.Status,
@@ -126,21 +127,22 @@ func (q *Queries) GetLinkByID(ctx context.Context, id int64) (GetLinkByIDRow, er
 
 const getLinkByShortenedURL = `-- name: GetLinkByShortenedURL :one
 SELECT
-    id,
-    user_id,
-    target_url,
-    shortened_url,
-    status,
-    expiration_date,
-    created_at,
-    updated_at
-FROM links
+    l.id,
+    u.user_name,
+    l.target_url,
+    l.shortened_url,
+    l.status,
+    l.expiration_date,
+    l.created_at,
+    l.updated_at
+FROM links l
+JOIN users u ON l.user_id = u.id
 WHERE shortened_url = $1 AND deleted_at IS NULL
 `
 
 type GetLinkByShortenedURLRow struct {
 	ID             int64              `json:"id"`
-	UserID         pgtype.Int8        `json:"user_id"`
+	UserName       string             `json:"user_name"`
 	TargetUrl      string             `json:"target_url"`
 	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
@@ -154,7 +156,7 @@ func (q *Queries) GetLinkByShortenedURL(ctx context.Context, shortenedUrl pgtype
 	var i GetLinkByShortenedURLRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.UserName,
 		&i.TargetUrl,
 		&i.ShortenedUrl,
 		&i.Status,
@@ -167,21 +169,22 @@ func (q *Queries) GetLinkByShortenedURL(ctx context.Context, shortenedUrl pgtype
 
 const getLinkByTargetURL = `-- name: GetLinkByTargetURL :one
 SELECT
-    id,
-    user_id,
-    target_url,
-    shortened_url,
-    status,
-    expiration_date,
-    created_at,
-    updated_at
-FROM links
+    l.id,
+    u.user_name,
+    l.target_url,
+    l.shortened_url,
+    l.status,
+    l.expiration_date,
+    l.created_at,
+    l.updated_at
+FROM links l
+JOIN users u ON l.user_id = u.id
 WHERE target_url = $1 AND deleted_at IS NULL
 `
 
 type GetLinkByTargetURLRow struct {
 	ID             int64              `json:"id"`
-	UserID         pgtype.Int8        `json:"user_id"`
+	UserName       string             `json:"user_name"`
 	TargetUrl      string             `json:"target_url"`
 	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
@@ -195,7 +198,7 @@ func (q *Queries) GetLinkByTargetURL(ctx context.Context, targetUrl string) (Get
 	var i GetLinkByTargetURLRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.UserName,
 		&i.TargetUrl,
 		&i.ShortenedUrl,
 		&i.Status,
@@ -208,21 +211,22 @@ func (q *Queries) GetLinkByTargetURL(ctx context.Context, targetUrl string) (Get
 
 const getLinks = `-- name: GetLinks :many
 SELECT
-    id,
-    user_id,
-    target_url,
-    shortened_url,
-    status,
-    expiration_date,
-    created_at,
-    updated_at
-FROM links
+    l.id,
+    u.user_name,
+    l.target_url,
+    l.shortened_url,
+    l.status,
+    l.expiration_date,
+    l.created_at,
+    l.updated_at
+FROM links l
+JOIN users u ON l.user_id = u.id
 WHERE deleted_at IS NULL
 `
 
 type GetLinksRow struct {
 	ID             int64              `json:"id"`
-	UserID         pgtype.Int8        `json:"user_id"`
+	UserName       string             `json:"user_name"`
 	TargetUrl      string             `json:"target_url"`
 	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
@@ -242,7 +246,7 @@ func (q *Queries) GetLinks(ctx context.Context) ([]GetLinksRow, error) {
 		var i GetLinksRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.UserName,
 			&i.TargetUrl,
 			&i.ShortenedUrl,
 			&i.Status,
@@ -262,21 +266,22 @@ func (q *Queries) GetLinks(ctx context.Context) ([]GetLinksRow, error) {
 
 const getLinksByStatus = `-- name: GetLinksByStatus :many
 SELECT
-    id,
-    user_id,
-    target_url,
-    shortened_url,
-    status,
-    expiration_date,
-    created_at,
-    updated_at
-FROM links
+    l.id,
+    u.user_name,
+    l.target_url,
+    l.shortened_url,
+    l.status,
+    l.expiration_date,
+    l.created_at,
+    l.updated_at
+FROM links l
+JOIN users u ON l.user_id = u.id
 WHERE status = $1 AND deleted_at IS NULL
 `
 
 type GetLinksByStatusRow struct {
 	ID             int64              `json:"id"`
-	UserID         pgtype.Int8        `json:"user_id"`
+	UserName       string             `json:"user_name"`
 	TargetUrl      string             `json:"target_url"`
 	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
 	Status         string             `json:"status"`
@@ -296,7 +301,7 @@ func (q *Queries) GetLinksByStatus(ctx context.Context, status string) ([]GetLin
 		var i GetLinksByStatusRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.UserName,
 			&i.TargetUrl,
 			&i.ShortenedUrl,
 			&i.Status,
@@ -318,7 +323,7 @@ const restoreLink = `-- name: RestoreLink :exec
 UPDATE links
 SET
     deleted_at = NULL
-WHERE id = $1
+WHERE id = $1 AND deleted_at IS NOT NULL
 `
 
 func (q *Queries) RestoreLink(ctx context.Context, id int64) error {
@@ -327,14 +332,25 @@ func (q *Queries) RestoreLink(ctx context.Context, id int64) error {
 }
 
 const updateLink = `-- name: UpdateLink :one
-UPDATE links
+UPDATE links l
 SET
     target_url = $2,
     status = $3,
     expiration_date = $4,
     updated_at = $5
-WHERE id = $1
-RETURNING id, user_id, target_url, shortened_url, password, status, expiration_date, created_at, updated_at, deleted_at
+FROM users u
+WHERE l.id = $1
+  AND l.user_id = u.id
+  AND l.delete_at IS NULL
+RETURNING
+    l.id,
+    u.user_name,
+    l.target_url,
+    l.shortened_url,
+    l.status,
+    l.expiration_date,
+    l.created_at,
+    l.updated_at
 `
 
 type UpdateLinkParams struct {
@@ -345,7 +361,18 @@ type UpdateLinkParams struct {
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
-func (q *Queries) UpdateLink(ctx context.Context, arg UpdateLinkParams) (Link, error) {
+type UpdateLinkRow struct {
+	ID             int64              `json:"id"`
+	UserName       string             `json:"user_name"`
+	TargetUrl      string             `json:"target_url"`
+	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
+	Status         string             `json:"status"`
+	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) UpdateLink(ctx context.Context, arg UpdateLinkParams) (UpdateLinkRow, error) {
 	row := q.db.QueryRow(ctx, updateLink,
 		arg.ID,
 		arg.TargetUrl,
@@ -353,28 +380,37 @@ func (q *Queries) UpdateLink(ctx context.Context, arg UpdateLinkParams) (Link, e
 		arg.ExpirationDate,
 		arg.UpdatedAt,
 	)
-	var i Link
+	var i UpdateLinkRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.UserName,
 		&i.TargetUrl,
 		&i.ShortenedUrl,
-		&i.Password,
 		&i.Status,
 		&i.ExpirationDate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const updateLinkShortenedURL = `-- name: UpdateLinkShortenedURL :one
-UPDATE links
+UPDATE links l
 SET
     shortened_url = $2
-WHERE id = $1
-RETURNING id, user_id, target_url, shortened_url, password, status, expiration_date, created_at, updated_at, deleted_at
+FROM users u
+WHERE l.id = $1
+    AND l.user_id = u.id
+    AND l.deleted_at IS NULL
+RETURNING
+    l.id,
+    u.user_name,
+    l.target_url,
+    l.shortened_url,
+    l.status,
+    l.expiration_date,
+    l.created_at,
+    l.updated_at
 `
 
 type UpdateLinkShortenedURLParams struct {
@@ -382,20 +418,29 @@ type UpdateLinkShortenedURLParams struct {
 	ShortenedUrl pgtype.Text `json:"shortened_url"`
 }
 
-func (q *Queries) UpdateLinkShortenedURL(ctx context.Context, arg UpdateLinkShortenedURLParams) (Link, error) {
+type UpdateLinkShortenedURLRow struct {
+	ID             int64              `json:"id"`
+	UserName       string             `json:"user_name"`
+	TargetUrl      string             `json:"target_url"`
+	ShortenedUrl   pgtype.Text        `json:"shortened_url"`
+	Status         string             `json:"status"`
+	ExpirationDate pgtype.Timestamptz `json:"expiration_date"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) UpdateLinkShortenedURL(ctx context.Context, arg UpdateLinkShortenedURLParams) (UpdateLinkShortenedURLRow, error) {
 	row := q.db.QueryRow(ctx, updateLinkShortenedURL, arg.ID, arg.ShortenedUrl)
-	var i Link
+	var i UpdateLinkShortenedURLRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.UserName,
 		&i.TargetUrl,
 		&i.ShortenedUrl,
-		&i.Password,
 		&i.Status,
 		&i.ExpirationDate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.DeletedAt,
 	)
 	return i, err
 }
