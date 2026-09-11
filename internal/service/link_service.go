@@ -6,10 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Isc740/url-shortener/internal/base62"
 	"github.com/Isc740/url-shortener/internal/db"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -29,8 +26,12 @@ var (
 	ErrLinkExpired        = errors.New("link has expired")
 	ErrLinkInactive       = errors.New("link is inactive")
 	ErrDuplicateTargetURL = errors.New("target url already shortened")
-	ErrUserNotFound       = errors.New("user does not exist")
 )
+
+var linkCreateErrors = map[string]error{
+	"23505": ErrDuplicateTargetURL,
+	"23503": ErrUserNotFound,
+}
 
 func (s *LinkService) GetAll(ctx context.Context) ([]db.GetLinksRow, error) {
 	links, err := s.queries.GetLinks(ctx)
@@ -92,25 +93,17 @@ func (s *LinkService) GetTargetURLByShortenedURL(ctx context.Context, shortenedU
 
 func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO, error) {
 	link, err := s.queries.CreateLink(ctx, db.CreateLinkParams{
-		UserID:         pgtype.Int8{Int64: int64(params.UserID)},
+		UserID:         pgtype.Int8{Int64: int64(params.UserID), Valid: true},
 		TargetUrl:      params.TargetURL,
-		Password:       pgtype.Text{String: params.Password, Valid: true},
+		Password:       pgtype.Text{String: params.Password, Valid: params.Password != ""},
 		Status:         "active",
-		ExpirationDate: pgtype.Timestamptz{Time: params.ExpirationDate},
+		ExpirationDate: pgtype.Timestamptz{Time: params.ExpirationDate, Valid: true},
 		CreatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
 		UpdatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	})
+
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			switch pgErr.Code {
-			case "23505": // unique_violation
-				return LinkDTO{}, ErrDuplicateTargetURL
-			case "23503": // foreign_key_violation
-				return LinkDTO{}, ErrUserNotFound
-			}
-		}
-		return LinkDTO{}, fmt.Errorf("error creating link: %w", err)
+		return wrapCreateError[LinkDTO](err, "creating link", linkCreateErrors)
 	}
 
 	shortenedURL := shortenURL(link.ID)
@@ -156,15 +149,4 @@ func (s *LinkService) Update(ctx context.Context, params UpdateLinkDTO) (LinkDTO
 		CreatedAt:      link.CreatedAt.Time,
 		UpdatedAt:      link.UpdatedAt.Time,
 	}, nil
-}
-
-func shortenURL(id int64) string {
-	return base62.Encode(uint64(id))
-}
-
-func wrapNotFound(err error, notFound error, msg string) error {
-	if errors.Is(err, pgx.ErrNoRows) {
-		return notFound
-	}
-	return fmt.Errorf("%s: %w", msg, err)
 }

@@ -34,7 +34,7 @@ func NewApp(cfg config.Config, pool *pgxpool.Pool, logger *slog.Logger) *App {
 	userHandler.RegisterRoutes(app.Router)
 	linkHandler.RegisterRoutes(app.Router)
 
-	app.Router.HandleFunc("GET /", healthCheck)
+	app.Router.HandleFunc("GET /healthz", healthCheck)
 
 	return app
 }

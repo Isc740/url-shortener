@@ -30,7 +30,7 @@ SELECT
     l.updated_at
 FROM links l
 JOIN users u ON l.user_id = u.id
-WHERE l.id = $1 AND delete_at IS NULL;
+WHERE l.id = $1 AND l.delete_at IS NULL;
 
 -- name: GetLinkByTargetURL :one
 SELECT
@@ -44,7 +44,7 @@ SELECT
     l.updated_at
 FROM links l
 JOIN users u ON l.user_id = u.id
-WHERE target_url = $1 AND deleted_at IS NULL;
+WHERE target_url = $1 AND l.deleted_at IS NULL;
 
 -- name: GetLinkByShortenedURL :one
 SELECT
@@ -58,13 +58,13 @@ SELECT
     l.updated_at
 FROM links l
 JOIN users u ON l.user_id = u.id
-WHERE shortened_url = $1 AND deleted_at IS NULL;
+WHERE shortened_url = $1 AND l.deleted_at IS NULL;
 
 -- name: GetTargetURLByShortenedURL :one
 SELECT
     target_url
 FROM links
-WHERE shortened_url = $1 AND deleted_at IS NULL;
+WHERE shortened_url = $1 AND l.deleted_at IS NULL;
 
 -- name: GetLinksByStatus :many
 SELECT
@@ -78,7 +78,7 @@ SELECT
     l.updated_at
 FROM links l
 JOIN users u ON l.user_id = u.id
-WHERE status = $1 AND deleted_at IS NULL;
+WHERE status = $1 AND l.deleted_at IS NULL;
 
 -- name: UpdateLink :one
 UPDATE links l

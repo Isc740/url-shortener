@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -19,23 +20,51 @@ func NewUserService(querier db.Querier) *UserService {
 	}
 }
 
+var (
+	ErrUsersNotFound  = errors.New("links not found")
+	ErrUserExpired    = errors.New("link has expired")
+	ErrUserInactive   = errors.New("link is inactive")
+	ErrUserNotFound   = errors.New("user does not exist")
+	ErrDuplicateEmail = errors.New("email already in use")
+)
+
+var userCreateErrors = map[string]error{
+	"23505": ErrDuplicateEmail,
+}
+
 func (s *UserService) GetAll(ctx context.Context, limit int, offset int) ([]db.GetUsersRow, error) {
-	return s.queries.GetUsers(ctx, db.GetUsersParams{
+	users, err := s.queries.GetUsers(ctx, db.GetUsersParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	})
+	if err != nil {
+		return nil, fmt.Errorf("Error getting users: %w", err)
+	}
+	return users, nil
 }
 
 func (s *UserService) GetById(ctx context.Context, id int) (db.GetUserByIDRow, error) {
-	return s.queries.GetUserByID(ctx, int64(id))
+	user, err := s.queries.GetUserByID(ctx, int64(id))
+	if err != nil {
+		return db.GetUserByIDRow{}, wrapNotFound(err, ErrUserNotFound, "error getting user")
+	}
+	return user, nil
 }
 
 func (s *UserService) GetByUserName(ctx context.Context, name string) (db.GetUserByNameRow, error) {
-	return s.queries.GetUserByName(ctx, name)
+	user, err := s.queries.GetUserByName(ctx, name)
+	if err != nil {
+		return db.GetUserByNameRow{}, wrapNotFound(err, ErrUserNotFound, "error getting user")
+	}
+	return user, nil
 }
 
 func (s *UserService) GetByEmailForUserAuth(ctx context.Context, email string) (db.GetUserByEmailForAuthRow, error) {
-	return s.queries.GetUserByEmailForAuth(ctx, email)
+	user, err := s.queries.GetUserByEmailForAuth(ctx, email)
+	if err != nil {
+		return db.GetUserByEmailForAuthRow{}, wrapNotFound(err, ErrUserNotFound, "error getting user")
+	}
+	return user, nil
 }
 
 func (s *UserService) Create(ctx context.Context, i CreateUserRequest) (UserResponse, error) {
@@ -47,8 +76,9 @@ func (s *UserService) Create(ctx context.Context, i CreateUserRequest) (UserResp
 		CreatedAt: pgtype.Timestamptz{Time: now, Valid: true},
 		UpdatedAt: pgtype.Timestamptz{Time: now, Valid: true},
 	})
+
 	if err != nil {
-		return UserResponse{}, fmt.Errorf("error creating user: %w", err)
+		return wrapCreateError[UserResponse](err, "creating user", userCreateErrors)
 	}
 
 	return UserResponse{
