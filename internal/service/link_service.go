@@ -51,7 +51,7 @@ func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO
 		UpdatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	})
 	if err != nil {
-		return LinkDTO{}, err
+		return LinkDTO{}, fmt.Errorf("error creating user %w", err)
 	}
 
 	shortenedURL := base62.Encode(uint64(link.ID))
@@ -60,7 +60,7 @@ func (s *LinkService) Create(ctx context.Context, params CreateLinkDTO) (LinkDTO
 		ShortenedUrl: pgtype.Text{String: shortenedURL, Valid: true},
 	})
 	if err != nil {
-		return LinkDTO{}, err
+		return LinkDTO{}, fmt.Errorf("error shortening url: %w", err)
 	}
 
 	return LinkDTO{
